@@ -63,9 +63,8 @@
     for (var i = 0; i < links.length; i++) {
       var a = links[i], name = a.getAttribute('href').slice(7);
       if (name === 'top') continue;
-      var on = name === current;
-      a.style.background = on ? '#777f9f' : 'transparent';
-      a.style.color = on ? '#ffffff' : '#777f9f';
+      if (name === current) a.setAttribute('data-momon-active', '');
+      else a.removeAttribute('data-momon-active');
     }
   }
 
@@ -81,7 +80,21 @@
     if (!ticking) { ticking = true; requestAnimationFrame(report); }
   }
 
+  // 메뉴 마우스 오버 / 현재 섹션 강조 스타일
+  function addStyle() {
+    if (document.getElementById('momon-menu-style')) return;
+    var st = document.createElement('style');
+    st.id = 'momon-menu-style';
+    st.textContent =
+      'a[href^="#momon-"]{transition:background .2s,color .2s,transform .2s!important;cursor:pointer}' +
+      'a[href^="#momon-"]:not([href="#momon-top"]):not([data-momon-active]):hover{background:#eef0f7!important;color:#343849!important;transform:translateX(-2px)}' +
+      'a[href="#momon-top"]:hover{color:#343849!important}' +
+      'a[href^="#momon-"][data-momon-active]{background:#777f9f!important;color:#ffffff!important}';
+    (document.head || document.documentElement).appendChild(st);
+  }
+
   function init() {
+    addStyle();
     frame = findFrame();
     if (!frame) return;
     try { childOrigin = new URL(frame.src, location.href).origin; } catch (e) { childOrigin = '*'; }
