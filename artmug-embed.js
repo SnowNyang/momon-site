@@ -48,8 +48,9 @@
   }
 
   function goTo(name) {
+    if (name === 'top') { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
     if (!frame) return;
-    var y = frameTop() + (name === 'top' ? 0 : (sections[name] || 0)) - OFFSET;
+    var y = frameTop() + (sections[name] || 0) - OFFSET;
     window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
   }
 
