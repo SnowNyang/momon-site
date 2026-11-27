@@ -93,8 +93,30 @@
     (document.head || document.documentElement).appendChild(st);
   }
 
+  // PC 오른쪽 메뉴를 광고 배너 오른쪽으로 옮겨 광고를 가리지 않게 함
+  var GAP = 16;
+  function placeMenu() {
+    var link = document.querySelector('#custom_code a[href^="#momon-"]') || document.querySelector('a[href="#momon-top"]');
+    if (!link) return;
+    var menu = link.parentElement;
+    while (menu && menu !== document.body && getComputedStyle(menu).position !== 'fixed') menu = menu.parentElement;
+    if (!menu || menu === document.body || menu.offsetWidth === 0) return;
+    var ads = document.querySelectorAll('[class*="ad_banner"]'), ad = null;
+    for (var i = 0; i < ads.length; i++) {
+      var r = ads[i].getBoundingClientRect();
+      if (r.width > 40 && r.height > 40 && r.left > window.innerWidth / 2) { if (!ad || r.right > ad.right) ad = r; }
+    }
+    if (!ad) return;
+    var left = ad.right + GAP, max = window.innerWidth - menu.offsetWidth - 12;
+    menu.style.left = Math.max(0, Math.min(left, max)) + 'px';
+    menu.style.transform = 'translateY(-50%)';
+  }
+
   function init() {
     addStyle();
+    placeMenu();
+    window.addEventListener('resize', placeMenu);
+    window.addEventListener('load', function () { placeMenu(); setTimeout(placeMenu, 1000); });
     frame = findFrame();
     if (!frame) return;
     try { childOrigin = new URL(frame.src, location.href).origin; } catch (e) { childOrigin = '*'; }
