@@ -1,0 +1,122 @@
+/* Mo Mon - 아트머그 소개글용 연결 스크립트
+ * 아트머그 소개글에 iframe과 함께 넣어 사용합니다.
+ * - 페이지가 열린 뒤 iframe 높이를 내용에 맞게 늘립니다. ("내용 더 보기" 없이 전체 표시)
+ * - 커스텀 메뉴(PC 오른쪽 / 모바일 하단)의 #momon-섹션 링크를 누르면 해당 섹션으로 이동합니다.
+ * - 지금 보고 있는 섹션의 메뉴를 강조합니다.
+ */
+(function () {
+  if (window.__momonEmbed) return;
+  window.__momonEmbed = true;
+
+  var OFFSET = 70; // 이동할 때 화면 위쪽에 남길 여백(px)
+  var frame = null, childOrigin = '', contentHeight = 0, sections = {};
+  var pageLoaded = document.readyState === 'complete', applied = false, ticking = false;
+
+  function findFrame() {
+    var list = document.querySelectorAll('iframe');
+    for (var i = 0; i < list.length; i++) {
+      if (/momon-site/.test(list[i].src) && /embed=artmug/.test(list[i].src)) return list[i];
+    }
+    return null;
+  }
+
+  function post(msg) {
+    if (frame && frame.contentWindow) frame.contentWindow.postMessage(msg, childOrigin || '*');
+  }
+
+  function frameTop() {
+    return frame.getBoundingClientRect().top + (window.pageYOffset || document.documentElement.scrollTop);
+  }
+
+  // 아트머그는 페이지가 열릴 때(load) 소개글 높이가 3000px 이상이면 접어 둡니다.
+  // 그래서 load가 끝난 뒤에 높이를 적용합니다.
+  function applyHeight() {
+    if (!frame || !pageLoaded || !contentHeight) return;
+    frame.style.height = contentHeight + 'px';
+    frame.setAttribute('scrolling', 'no');
+    frame.style.overflow = 'hidden';
+    if (!applied) {
+      applied = true;
+      var box = frame.closest ? frame.closest('.detailinfo') : null;
+      if (box && box.classList.contains('showstep1')) {
+        box.classList.remove('showstep1');
+        var more = document.querySelector('.btn_open');
+        if (more) more.style.display = 'none';
+      }
+    }
+    schedule();
+  }
+
+  function goTo(name) {
+    if (!frame) return;
+    var y = frameTop() + (name === 'top' ? 0 : (sections[name] || 0)) - OFFSET;
+    window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+  }
+
+  function highlight() {
+    var links = document.querySelectorAll('a[href^="#momon-"]');
+    if (!links.length || !frame) return;
+    var base = frameTop(), mark = (window.pageYOffset || document.documentElement.scrollTop) + window.innerHeight * 0.4;
+    var current = '';
+    for (var k in sections) if (base + sections[k] <= mark) current = k;
+    if (base > mark) current = '';
+    for (var i = 0; i < links.length; i++) {
+      var a = links[i], name = a.getAttribute('href').slice(7);
+      if (name === 'top') continue;
+      var on = name === current;
+      a.style.background = on ? '#777f9f' : 'transparent';
+      a.style.color = on ? '#ffffff' : '#777f9f';
+    }
+  }
+
+  function report() {
+    ticking = false;
+    if (!frame) return;
+    var r = frame.getBoundingClientRect();
+    post({ channel: 'momon-embed', type: 'viewport', top: Math.max(0, -r.top), height: window.innerHeight });
+    highlight();
+  }
+
+  function schedule() {
+    if (!ticking) { ticking = true; requestAnimationFrame(report); }
+  }
+
+  function init() {
+    frame = findFrame();
+    if (!frame) return;
+    try { childOrigin = new URL(frame.src, location.href).origin; } catch (e) { childOrigin = '*'; }
+
+    window.addEventListener('message', function (e) {
+      if (!frame || e.source !== frame.contentWindow) return;
+      if (childOrigin !== '*' && e.origin !== childOrigin) return;
+      var d = e.data;
+      if (!d || d.channel !== 'momon-embed') return;
+      if (d.type === 'size') {
+        var h = Math.ceil(Number(d.height));
+        if (h > 0 && h < 100000) contentHeight = h;
+        if (d.sections && typeof d.sections === 'object') sections = d.sections;
+        applyHeight();
+      }
+    });
+
+    document.addEventListener('click', function (e) {
+      var a = e.target && e.target.closest ? e.target.closest('a[href^="#momon-"]') : null;
+      if (!a) return;
+      e.preventDefault();
+      goTo(a.getAttribute('href').slice(7));
+    });
+
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule);
+    frame.addEventListener('load', function () { post({ channel: 'momon-embed', type: 'hello' }); schedule(); });
+    post({ channel: 'momon-embed', type: 'hello' });
+  }
+
+  window.addEventListener('load', function () {
+    // 아트머그의 높이 검사가 먼저 끝나도록 한 박자 늦게 적용
+    setTimeout(function () { pageLoaded = true; applyHeight(); }, 50);
+  });
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
