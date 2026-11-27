@@ -133,6 +133,7 @@
         if (d.sections && typeof d.sections === 'object') sections = d.sections;
         applyHeight();
       }
+      if (d.type === 'goto' && typeof d.section === 'string') goTo(d.section);
     });
 
     document.addEventListener('click', function (e) {
