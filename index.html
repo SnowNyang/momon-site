@@ -105,10 +105,10 @@ html[data-embed] .hero{padding-top:40px}
 @media(prefers-reduced-motion:reduce){.status.open:before{animation:none}}
 </style><script>(()=>{const q=new URLSearchParams(location.search),s=q.get("section"),e=q.get("embed");if(s)document.documentElement.dataset.section=s;if(e)document.documentElement.dataset.embed=e})();</script></head><body><header><nav><a class="logo" href="#">Mo Mon</a><div class="nav-links"><a href="#showcase">쇼케이스</a><a href="#details">디테일</a><a href="#pricing">가격</a><a href="#partners">협업</a><a href="#notice">공지사항</a></div></nav></header><nav class="float-nav" aria-label="섹션 바로가기"><a href="#showcase">쇼케이스</a><a href="#details">디테일</a><a href="#pricing">가격</a><a href="#partners">협업</a><a href="#notice">공지사항</a><a class="to-top" href="#">↑ 맨 위로</a></nav><main><div class="hero" id="intro"><div class="eyebrow">Live2D Rigging Commission</div><h1>Mo Mon</h1><div class="status" id="commissionStatus">12월 재오픈 예정</div><script>
 /* ===== 커미션 상태 설정 =====
-   예약을 받을 때      → const RESERVATION_OPEN = true;   (초록불 + "예약 접수중")
-   예약을 안 받을 때   → const RESERVATION_OPEN = false;  (회색 점 + 아래 CLOSED_TEXT 문구)
+   예약을 받을 때      → 바로 아래 줄 끝을 true  로 (초록불 + 예약 접수중)
+   예약을 안 받을 때   → 바로 아래 줄 끝을 false 로 (회색 점 + 재오픈 문구)
 */
-const RESERVATION_OPEN = false;
+const RESERVATION_OPEN = true;
 const OPEN_TEXT = "예약 접수중";
 const CLOSED_TEXT = "12월 재오픈 예정";
 (()=>{const el=document.getElementById("commissionStatus");el.textContent=RESERVATION_OPEN?OPEN_TEXT:CLOSED_TEXT;el.classList.toggle("open",RESERVATION_OPEN)})();
