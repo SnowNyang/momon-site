@@ -108,7 +108,7 @@ html[data-embed] .hero{padding-top:40px}
    예약을 받을 때      → const RESERVATION_OPEN = true;   (초록불 + "예약 접수중")
    예약을 안 받을 때   → const RESERVATION_OPEN = false;  (회색 점 + 아래 CLOSED_TEXT 문구)
 */
-const RESERVATION_OPEN = true;
+const RESERVATION_OPEN = false;
 const OPEN_TEXT = "예약 접수중";
 const CLOSED_TEXT = "12월 재오픈 예정";
 (()=>{const el=document.getElementById("commissionStatus");el.textContent=RESERVATION_OPEN?OPEN_TEXT:CLOSED_TEXT;el.classList.toggle("open",RESERVATION_OPEN)})();
