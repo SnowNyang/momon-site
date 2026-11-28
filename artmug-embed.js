@@ -59,7 +59,8 @@
     if (!links.length || !frame) return;
     var base = frameTop(), mark = (window.pageYOffset || document.documentElement.scrollTop) + window.innerHeight * 0.4;
     var current = '';
-    for (var k in sections) if (base + sections[k] <= mark) current = k;
+    var order = Object.keys(sections).sort(function (a, b) { return sections[a] - sections[b]; });
+    for (var j = 0; j < order.length; j++) if (base + sections[order[j]] <= mark) current = order[j];
     if (base > mark) current = '';
     for (var i = 0; i < links.length; i++) {
       var a = links[i], name = a.getAttribute('href').slice(7);
@@ -90,26 +91,52 @@
       'a[href^="#momon-"]{transition:background .2s,color .2s,transform .2s!important;cursor:pointer}' +
       'a[href^="#momon-"]:not([href="#momon-top"]):not([data-momon-active]):hover{background:#eef0f7!important;color:#343849!important;transform:translateX(-2px)}' +
       'a[href="#momon-top"]:hover{color:#343849!important}' +
-      'a[href^="#momon-"][data-momon-active]{background:#777f9f!important;color:#ffffff!important}';
+      'a[href^="#momon-"][data-momon-active]{background:#777f9f!important;color:#ffffff!important}' +
+      '.momon-dock-bottom{top:auto!important;bottom:18px!important;left:50%!important;right:auto!important;transform:translateX(-50%)!important;width:auto!important;max-width:calc(100vw - 24px)!important;display:flex!important;align-items:center;gap:2px;padding:6px!important;border-radius:999px!important;white-space:nowrap;overflow-x:auto}' +
+      '.momon-dock-bottom>div{display:none!important}' +
+      '.momon-dock-bottom a{display:inline-block!important;margin:0!important;padding:8px 14px!important;border-radius:999px!important}' +
+      '.momon-dock-bottom a:hover{transform:none!important}';
     (document.head || document.documentElement).appendChild(st);
   }
 
   // PC 오른쪽 메뉴를 광고 배너 오른쪽으로 옮겨 광고를 가리지 않게 함
-  var GAP = 16;
-  function placeMenu() {
+  var GAP = 16, menuEl = null;
+  function findMenu() {
+    if (menuEl && document.documentElement.contains(menuEl)) return menuEl;
     var link = document.querySelector('#custom_code a[href^="#momon-"]') || document.querySelector('a[href="#momon-top"]');
-    if (!link) return;
-    var menu = link.parentElement;
-    while (menu && menu !== document.body && getComputedStyle(menu).position !== 'fixed') menu = menu.parentElement;
-    if (!menu || menu === document.body || menu.offsetWidth === 0) return;
+    if (!link) return null;
+    var m = link.parentElement;
+    while (m && m !== document.body && getComputedStyle(m).position !== 'fixed') m = m.parentElement;
+    if (!m || m === document.body) return null;
+    menuEl = m;
+    return m;
+  }
+
+  // PC 오른쪽 메뉴: 광고 배너 오른쪽에 두고, 창이 좁아서 자리가 없으면 화면 아래 가운데로 옮김
+  function placeMenu() {
+    var menu = findMenu();
+    if (!menu) return;
+    menu.classList.remove('momon-dock-bottom');
+    menu.style.left = '';
+    menu.style.transform = '';
+    if (menu.offsetWidth === 0) {           // 아트머그가 메뉴 칸을 숨긴 경우: 화면에 직접 띄움
+      document.body.appendChild(menu);
+      if (menu.offsetWidth === 0) return;
+    }
+    var w = menu.offsetWidth;
     var ads = document.querySelectorAll('[class*="ad_banner"]'), ad = null;
     for (var i = 0; i < ads.length; i++) {
       var r = ads[i].getBoundingClientRect();
       if (r.width > 40 && r.height > 40 && r.left > window.innerWidth / 2) { if (!ad || r.right > ad.right) ad = r; }
     }
-    if (!ad) return;
-    var left = ad.right + GAP, max = window.innerWidth - menu.offsetWidth - 12;
-    menu.style.left = Math.max(0, Math.min(left, max)) + 'px';
+    var left = ad ? ad.right + GAP : menu.getBoundingClientRect().left;
+    var narrow = window.innerWidth < 900 || left + w > window.innerWidth - 8;
+    if (frame) {                            // 메뉴가 소개글(사이트) 위를 덮으면 아래로
+      var fr = frame.getBoundingClientRect();
+      if (left < fr.right + 8 && left + w > fr.left) narrow = true;
+    }
+    if (narrow) { menu.classList.add('momon-dock-bottom'); return; }
+    menu.style.left = left + 'px';
     menu.style.transform = 'translateY(-50%)';
   }
 
